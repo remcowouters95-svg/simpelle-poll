@@ -1,6 +1,6 @@
 # Simpelle Poll App voor Simpelle
 
-Een poll op één pagina voor ideeën voor de vriendendag. Iedereen met de gedeelde link kan een idee toevoegen (titel, omschrijving, link) en per idee nee, neutraal of ja kiezen (telt als -1, 0 of +1). De naam van de stemmer komt er automatisch bij; alleen de eigenaar kan ideeën schrappen.
+Een poll op één pagina voor ideeën voor de vriendendag. Iedereen met de gedeelde link kan een idee toevoegen (titel, omschrijving, link) en per idee nee, neutraal of ja kiezen (telt als -1, 0 of +1). De naam van de stemmer komt er automatisch bij; alleen de eigenaar kan ideeën schrappen. Onderaan staat een knop Geef suggesties: de pagina vraagt Claude (via de `sample` capability) om drie nieuwe ideeën in de lijn van wat er al staat, elk met een knop om het meteen op de lijst te zetten.
 
 ## Hoe het werkt
 

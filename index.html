@@ -61,6 +61,13 @@
   .del { justify-self: end; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 4px 10px; font: inherit; font-size: .8rem; cursor: pointer; }
   .del.confirm { border-color: var(--no); color: var(--no); }
   .empty { color: var(--muted); font-style: italic; padding: 10px 0; }
+  .sugg { display: grid; gap: 10px; }
+  .ghost { justify-self: start; background: transparent; border: 2px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 9px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+  .ghost:disabled { opacity: .5; cursor: default; }
+  .s { background: var(--paper); border: 1px dotted var(--line); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; }
+  .s h3 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
+  .s p { margin: 0; color: var(--muted); font-size: .92rem; }
+  .s button { justify-self: start; }
 
   form { background: var(--paper); border: 1px dashed var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 10px; }
   label { display: grid; gap: 4px; font-size: .85rem; font-weight: 700; color: var(--muted); }
@@ -102,10 +109,17 @@
     <button class="add" id="addBtn" type="submit">Idee toevoegen</button>
     <p class="tip">Toevoegen en stemmen lukt zolang je via de gedeelde link met bewerkrechten binnenkomt. Alleen de eigenaar kan ideeën schrappen.</p>
   </form>
+
+  <section class="sugg" id="sugg" hidden>
+    <div class="eyebrow">Suggesties</div>
+    <p class="tip" id="suggTip">Op basis van wat er al staat bedenkt de pagina een paar ideeën in dezelfde richting.</p>
+    <button class="ghost" id="suggBtn" type="button">Geef suggesties</button>
+    <ul class="list" id="suggList"></ul>
+  </section>
 </main>
 
 <script id="state" type="application/json">
-{"ideas":[{"id":"a1","title":"Escaperoom en daarna eten in Arnhem","desc":"Een escaperoom van een uur en daarna een lange tafel bij een restaurant in de binnenstad. Werkt voor groot en klein gezelschap.","link":"","votes":{}},{"id":"a2","title":"Wandeling over de Veluwezoom met borrel","desc":"Rondje Posbank, lunch in een pannenkoekenhuis of eigen picknick. Kost bijna niets.","link":"","votes":{}},{"id":"a3","title":"Kanoën of suppen","desc":"Halve dag op het water, daarna barbecue op de kant. Alleen bij mooi weer.","link":"","votes":{}},{"id":"a4","title":"Eigen pubquiz met thema","desc":"Iedereen maakt een ronde, winnaar bepaalt het thema van volgend jaar. Afsluiten met bowlen of darten.","link":"","votes":{}}]}
+{"ideas":[]}
 </script>
 
 <script>
@@ -117,7 +131,8 @@
   var whoEl = document.getElementById('who');
   var form = document.getElementById('form');
   var addBtn = document.getElementById('addBtn');
-  var artifact = null, user = null;
+  var artifact = null, user = null, sample = null;
+  var suggEl = document.getElementById('sugg'), suggBtn = document.getElementById('suggBtn'), suggList = document.getElementById('suggList'), suggTip = document.getElementById('suggTip');
   var canWrite = false, isOwner = false;
   var myKey = null;      // u_... (platform id) of "n:Naam" als er geen identiteit is
   var pendingDelete = null;
@@ -221,6 +236,36 @@
     publish('Idee toegevoegd.');
   });
 
+  function suggest() {
+    if (!sample || !state.ideas.length) return;
+    suggBtn.disabled = true; suggTip.textContent = 'Even denken…';
+    var lijst = state.ideas.map(function (i) { return '- ' + i.title + (i.desc ? ' (' + i.desc + ')' : ''); }).join('\n');
+    var prompt = 'Een vriendengroep uit de omgeving van Arnhem kiest een activiteit voor een vriendendag. Dit staat er al op de lijst:\n' + lijst +
+      '\n\nBedenk 3 nieuwe ideeën in dezelfde sfeer als wat er al staat, maar geen dubbelingen. Kort en concreet, in het Nederlands. ' +
+      'Antwoord alleen met JSON: een array van objecten met velden "title" (max 60 tekens) en "desc" (één zin).';
+    sample.json(prompt, { modelTier: 'quick', cache: false }).then(function (arr) {
+      suggList.innerHTML = '';
+      if (!Array.isArray(arr) || !arr.length) throw new Error('leeg');
+      arr.slice(0, 3).forEach(function (it) {
+        var li = document.createElement('li'); li.className = 's';
+        li.innerHTML = '<h3>' + esc(it.title || '') + '</h3><p>' + esc(it.desc || '') + '</p>' +
+          (canWrite ? '<button class="ghost" type="button">Zet erbij</button>' : '');
+        var b = li.querySelector('button');
+        if (b) b.addEventListener('click', function () {
+          state.ideas.push({ id: 'i' + Date.now().toString(36), title: String(it.title || '').slice(0, 80), desc: String(it.desc || '').slice(0, 300), link: '', votes: {} });
+          li.remove(); render(); publish('Idee toegevoegd.');
+        });
+        suggList.appendChild(li);
+      });
+      suggTip.textContent = 'Zet erbij wat je leuk vindt, de rest verdwijnt vanzelf.';
+    }).catch(function (err) {
+      var code = err && err.code;
+      if (code === 'not_granted') { suggEl.hidden = true; return; }
+      suggTip.textContent = code === 'rate_limited' ? 'Even te veel gevraagd, probeer het zo nog eens.' : 'Suggesties ophalen lukte niet. Probeer het nog eens.';
+    }).finally(function () { suggBtn.disabled = false; });
+  }
+  suggBtn.addEventListener('click', suggest);
+
   function showNameField() {
     var saved = lsGet('simpelle-naam') || '';
     whoEl.innerHTML = '<label style="display:contents">Je naam <input id="naam" maxlength="30" placeholder="Zodat we weten wie stemt"></label>';
@@ -236,12 +281,15 @@
   }
 
   function setWrite(on) { canWrite = on; addBtn.disabled = !on; render(); }
+  var _render = render;
+  render = function () { _render(); suggBtn.disabled = !state.ideas.length; };
 
   setWrite(false);
   statusEl.textContent = 'Verbinden…';
   if (window.claude && typeof window.claude.use === 'function') {
-    Promise.all([window.claude.use('artifact'), window.claude.use('user')]).then(function (r) {
-      artifact = r[0]; user = r[1];
+    Promise.all([window.claude.use('artifact'), window.claude.use('user'), window.claude.use('sample')]).then(function (r) {
+      artifact = r[0]; user = r[1]; sample = r[2];
+      if (sample) suggEl.hidden = false;
       var me = user ? user.me() : Promise.resolve({ id: null, name: '', isOwner: false });
       me.then(function (m) {
         isOwner = !!m.isOwner;
