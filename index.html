@@ -1,0 +1,213 @@
+<title>Simpelle Poll App voor Simpelle</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Nunito:wght@400;600;700&display=swap">
+<style>
+  /* Layout: één smalle kolom, briefje op een prikbord. Ideeën als strookjes, stemmen als stempels. */
+  :root {
+    --bg: #f6f1e7;
+    --paper: #fffdf8;
+    --fg: #2b2622;
+    --muted: #6f655c;
+    --line: #e2d8c8;
+    --accent: #1f7a5a;
+    --accent-ink: #ffffff;
+    --tint: #e3f0e9;
+    --display: "Fraunces", Georgia, serif;
+    --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1916; --paper: #262220; --fg: #f1ebe2; --muted: #a79d91; --line: #3b342e;
+      --accent: #5fc39a; --accent-ink: #10231b; --tint: #233a31; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c1916; --paper: #262220; --fg: #f1ebe2; --muted: #a79d91; --line: #3b342e;
+    --accent: #5fc39a; --accent-ink: #10231b; --tint: #233a31; color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 560px; margin: 0 auto; display: grid; gap: 22px; }
+  h1 { font-family: var(--display); font-weight: 800; font-size: clamp(1.9rem, 6vw, 2.6rem); line-height: 1.05; margin: 0; text-wrap: balance; }
+  .lead { color: var(--muted); margin: 6px 0 0; }
+  .eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .status { font-size: .85rem; color: var(--muted); min-height: 1.3em; }
+
+  .list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .idea {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
+    padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: start;
+  }
+  .idea.top { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+  .idea h2 { font-family: var(--display); font-weight: 600; font-size: 1.2rem; margin: 0; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }
+  .idea p { margin: 0; color: var(--muted); font-size: .95rem; grid-column: 1; min-width: 0; overflow-wrap: anywhere; }
+  .idea a { color: var(--accent); font-weight: 600; grid-column: 1; font-size: .9rem; overflow-wrap: anywhere; }
+  .vote {
+    grid-row: 1 / span 3; align-self: center;
+    display: grid; justify-items: center; gap: 2px;
+    border: 2px solid var(--accent); background: transparent; color: var(--accent);
+    border-radius: 10px; padding: 8px 12px; min-width: 64px; cursor: pointer; font-family: var(--body); font-weight: 700;
+  }
+  .vote .n { font-family: var(--display); font-size: 1.5rem; line-height: 1; font-variant-numeric: tabular-nums; }
+  .vote .l { font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
+  .vote.mine { background: var(--accent); color: var(--accent-ink); }
+  .vote:disabled { opacity: .5; cursor: default; }
+  .vote:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .empty { color: var(--muted); font-style: italic; padding: 10px 0; }
+
+  form { background: var(--paper); border: 1px dashed var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 10px; }
+  label { display: grid; gap: 4px; font-size: .85rem; font-weight: 700; color: var(--muted); }
+  input, textarea {
+    font: inherit; font-size: 1rem; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; width: 100%; box-sizing: border-box;
+  }
+  textarea { resize: vertical; min-height: 64px; }
+  .add { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 12px; font: inherit; font-weight: 700; cursor: pointer; }
+  .add:disabled { opacity: .5; cursor: default; }
+  .tip { font-size: .8rem; color: var(--muted); margin: 0; }
+  @media (prefers-reduced-motion: no-preference) { .vote { transition: transform .12s; } .vote:active { transform: scale(.94); } }
+</style>
+
+<main>
+  <header>
+    <div class="eyebrow">Vriendendag</div>
+    <h1>Simpelle Poll App voor Simpelle</h1>
+    <p class="lead">Zet je idee erbij, stem op wat je leuk vindt. Eén stem per idee, meerdere ideeën mag.</p>
+  </header>
+
+  <section>
+    <div class="eyebrow">Ideeën</div>
+    <ul class="list" id="list"></ul>
+    <div class="status" id="status"></div>
+  </section>
+
+  <form id="form">
+    <div class="eyebrow">Nieuw idee</div>
+    <label>Idee
+      <input id="title" name="title" maxlength="80" required placeholder="Bijv. kanoën op de Linge">
+    </label>
+    <label>Omschrijving
+      <textarea id="desc" name="desc" maxlength="300" placeholder="Wat, waar, ongeveer wat het kost"></textarea>
+    </label>
+    <label>Link (optioneel)
+      <input id="link" name="link" type="url" placeholder="https://">
+    </label>
+    <button class="add" id="addBtn" type="submit">Idee toevoegen</button>
+    <p class="tip">Niemand hoeft in te loggen om te kijken. Toevoegen en stemmen lukt zolang je via de gedeelde link met bewerkrechten binnenkomt.</p>
+  </form>
+</main>
+
+<script id="state" type="application/json">
+{"ideas":[{"id":"a1","title":"Escaperoom en daarna eten in Arnhem","desc":"Een escaperoom van een uur en daarna een lange tafel bij een restaurant in de binnenstad. Werkt voor groot en klein gezelschap.","link":"","votes":0},{"id":"a2","title":"Wandeling over de Veluwezoom met borrel","desc":"Rondje Posbank, lunch in een pannenkoekenhuis of eigen picknick. Kost bijna niets.","link":"","votes":0},{"id":"a3","title":"Kanoën of suppen","desc":"Halve dag op het water, daarna barbecue op de kant. Alleen bij mooi weer.","link":"","votes":0},{"id":"a4","title":"Eigen pubquiz met thema","desc":"Iedereen maakt een ronde, winnaar bepaalt het thema van volgend jaar. Afsluiten met bowlen of darten.","link":"","votes":0}]}
+</script>
+
+<script>
+(function () {
+  var TEMPLATE = document.body.innerHTML; // statische pagina vóór render, met de JSON-state erin
+  var state = JSON.parse(document.getElementById('state').textContent);
+  var listEl = document.getElementById('list');
+  var statusEl = document.getElementById('status');
+  var form = document.getElementById('form');
+  var addBtn = document.getElementById('addBtn');
+  var artifact = null;
+  var canWrite = false;
+
+  function myVotes() {
+    try { return JSON.parse(localStorage.getItem('simpelle-votes') || '[]'); } catch (e) { return []; }
+  }
+  function saveMyVotes(v) { try { localStorage.setItem('simpelle-votes', JSON.stringify(v)); } catch (e) {} }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+
+  function render() {
+    var mine = myVotes();
+    var sorted = state.ideas.slice().sort(function (a, b) { return b.votes - a.votes; });
+    var max = sorted.length ? sorted[0].votes : 0;
+    listEl.innerHTML = '';
+    if (!sorted.length) { listEl.innerHTML = '<li class="empty">Nog geen ideeën. Zet het eerste erbij.</li>'; return; }
+    sorted.forEach(function (idea) {
+      var li = document.createElement('li');
+      li.className = 'idea' + (idea.votes > 0 && idea.votes === max ? ' top' : '');
+      var voted = mine.indexOf(idea.id) >= 0;
+      li.innerHTML =
+        '<h2>' + esc(idea.title) + '</h2>' +
+        '<button class="vote' + (voted ? ' mine' : '') + '" data-id="' + idea.id + '" type="button"' + (canWrite ? '' : ' disabled') + '>' +
+          '<span class="n">' + idea.votes + '</span><span class="l">' + (voted ? 'gestemd' : 'stem') + '</span></button>' +
+        (idea.desc ? '<p>' + esc(idea.desc) + '</p>' : '') +
+        (idea.link ? '<a href="' + esc(idea.link) + '" target="_blank" rel="noopener">' + esc(idea.link.replace(/^https?:\/\//, '')) + '</a>' : '');
+      listEl.appendChild(li);
+    });
+  }
+
+  function buildDocument() {
+    var body = TEMPLATE.replace(/<script id="state" type="application\/json">[\s\S]*?<\/script>/,
+      '<script id="state" type="application/json">\n' + JSON.stringify(state).replace(/<\//g, '<\\/') + '\n</' + 'script>');
+    return '<!doctype html><html><head>' + document.head.innerHTML + '</head><body>' + body + '</body></html>';
+  }
+
+  var busy = false;
+  function publish(msg) {
+    if (!artifact || busy) return;
+    busy = true; statusEl.textContent = 'Opslaan…';
+    artifact.publish(buildDocument()).then(function () {
+      statusEl.textContent = msg || 'Opgeslagen.';
+    }).catch(function (err) {
+      var code = err && err.code;
+      if (code === 'conflict') statusEl.textContent = 'Iemand anders was net eerder; de pagina ververst.';
+      else if (code === 'not_granted' || code === 'not_writer') statusEl.textContent = 'Je kunt alleen meekijken op deze link.';
+      else statusEl.textContent = 'Opslaan lukte niet. Probeer het nog eens.';
+    }).finally(function () { busy = false; });
+  }
+
+  listEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.vote'); if (!btn || !canWrite) return;
+    var id = btn.getAttribute('data-id');
+    var idea = state.ideas.find(function (i) { return i.id === id; }); if (!idea) return;
+    var mine = myVotes();
+    var at = mine.indexOf(id);
+    if (at >= 0) { mine.splice(at, 1); idea.votes = Math.max(0, idea.votes - 1); }
+    else { mine.push(id); idea.votes += 1; }
+    saveMyVotes(mine);
+    render();
+    publish(at >= 0 ? 'Stem ingetrokken.' : 'Stem geteld.');
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!canWrite) return;
+    var title = document.getElementById('title').value.trim();
+    if (!title) return;
+    state.ideas.push({
+      id: 'i' + Date.now().toString(36),
+      title: title,
+      desc: document.getElementById('desc').value.trim(),
+      link: document.getElementById('link').value.trim(),
+      votes: 0
+    });
+    form.reset();
+    render();
+    publish('Idee toegevoegd.');
+  });
+
+  function setWrite(on) {
+    canWrite = on;
+    addBtn.disabled = !on;
+    render();
+  }
+
+  setWrite(false);
+  statusEl.textContent = 'Verbinden…';
+  if (window.claude && typeof window.claude.use === 'function') {
+    window.claude.use('artifact').then(function (a) {
+      artifact = a;
+      if (a) { setWrite(true); statusEl.textContent = ''; }
+      else statusEl.textContent = 'Je kunt meekijken; toevoegen en stemmen kan niet vanaf deze link.';
+    });
+  } else {
+    statusEl.textContent = 'Je kunt meekijken; toevoegen en stemmen kan niet vanaf deze link.';
+  }
+})();
+</script>
