@@ -403,7 +403,7 @@
     sb.rpc('request_change', { p_code: lsGet('simpelle-beheer'), p_author: me() || 'Beheerder', p_body: body }).then(function (r) {
       reqBtn.disabled = false;
       if (r.error || !r.data) { setStatus('Versturen lukte niet. Klopt de beheercode nog?'); return; }
-      reqBody.value = ''; setStatus('Verzoek verstuurd. Claude kijkt er binnen een paar uur naar.'); loadRequests();
+      reqBody.value = ''; setStatus('Verzoek verstuurd. Claude kijkt er binnen een uur naar.'); loadRequests();
     });
   });
 
