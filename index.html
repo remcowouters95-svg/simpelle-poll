@@ -6,17 +6,20 @@
 <title>Simpelle Poll App voor Simpelle</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Nunito:wght@400;600;700&display=swap">
 <style>
-  /* Layout: één smalle kolom, briefje op een prikbord. Ideeën als strookjes, stemmen als drie knoppen: nee, neutraal, ja. */
+  /* Layout: één smalle kolom, briefje op een prikbord. Ideeën als strookjes, stemmen als drie knoppen: nee, neutraal, ja.
+     Onder elk idee een uitklapbaar blokje met opmerkingen en verbetersuggesties. */
   :root {
     --bg: #f6f1e7; --paper: #fffdf8; --fg: #2b2622; --muted: #6f655c; --line: #e2d8c8;
     --accent: #1f7a5a; --accent-ink: #ffffff; --no: #b2453a; --no-ink: #ffffff; --neutral: #8b8378;
+    --sug: #b8741a; --sug-bg: #fbf2e2; --note-bg: #f3efe7;
     --display: "Fraunces", Georgia, serif; --body: "Nunito", "Segoe UI", system-ui, sans-serif;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #1c1916; --paper: #262220; --fg: #f1ebe2; --muted: #a79d91; --line: #3b342e;
-      --accent: #5fc39a; --accent-ink: #10231b; --no: #e07a6c; --no-ink: #2a120e; --neutral: #9a9185; color-scheme: dark;
+      --accent: #5fc39a; --accent-ink: #10231b; --no: #e07a6c; --no-ink: #2a120e; --neutral: #9a9185;
+      --sug: #e4a955; --sug-bg: #33291b; --note-bg: #2e2925; color-scheme: dark;
     }
   }
   * { box-sizing: border-box; }
@@ -49,9 +52,32 @@
   .v:disabled { opacity: .5; cursor: default; }
   .names { font-size: .82rem; color: var(--muted); display: grid; gap: 2px; }
   .names b { color: var(--fg); font-weight: 700; }
-  .del { justify-self: end; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 4px 10px; font: inherit; font-size: .8rem; cursor: pointer; }
-  .del.confirm { border-color: var(--no); color: var(--no); }
+  .tools { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .small { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 4px 10px; font: inherit; font-size: .8rem; cursor: pointer; }
+  .small.confirm { border-color: var(--no); color: var(--no); }
+  .toggle { background: none; border: 0; color: var(--accent); font: inherit; font-size: .85rem; font-weight: 700; cursor: pointer; padding: 2px 0; text-align: left; }
+  .toggle::before { content: "▸ "; display: inline-block; }
+  .toggle[aria-expanded="true"]::before { content: "▾ "; }
+  .cbox { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 10px; }
+  .clist { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .c { background: var(--note-bg); border-radius: 6px; padding: 8px 10px; display: grid; gap: 3px; font-size: .9rem; }
+  .c.sug { background: var(--sug-bg); box-shadow: inset 3px 0 0 var(--sug); }
+  .cmeta { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: .78rem; color: var(--muted); }
+  .cmeta b { color: var(--fg); }
+  .kind { font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: .68rem; color: var(--sug); }
+  .c.note .kind { color: var(--muted); }
+  .cmeta .small { margin-left: auto; padding: 1px 7px; font-size: .72rem; }
+  .c p { margin: 0; color: var(--fg); font-size: .9rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .cform { display: grid; gap: 8px; background: transparent; border: 0; padding: 0; }
+  .kinds { display: flex; gap: 6px; flex-wrap: wrap; }
+  .kinds label { display: flex; gap: 6px; align-items: center; border: 2px solid var(--line); border-radius: 8px; padding: 5px 10px; font-size: .82rem; cursor: pointer; }
+  .kinds label:has(input:checked) { border-color: var(--accent); color: var(--fg); }
+  .kinds input { width: auto; margin: 0; accent-color: var(--accent); }
+  .cform textarea { min-height: 54px; }
+  .crow { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .crow .tip { flex: 1; }
   .empty { color: var(--muted); font-style: italic; padding: 10px 0; }
+  .cempty { color: var(--muted); font-style: italic; font-size: .85rem; }
   form { background: var(--paper); border: 1px dashed var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 10px; }
   label { display: grid; gap: 4px; font-size: .85rem; font-weight: 700; color: var(--muted); }
   input, textarea { font: inherit; font-size: 1rem; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; width: 100%; }
@@ -59,7 +85,7 @@
   .add { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 12px; font: inherit; font-weight: 700; cursor: pointer; }
   .add:disabled { opacity: .5; cursor: default; }
   .tip { font-size: .8rem; color: var(--muted); margin: 0; }
-  .ghost { justify-self: start; background: transparent; border: 2px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 9px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+  .ghost { justify-self: start; background: transparent; border: 2px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 7px 14px; font: inherit; font-weight: 700; font-size: .9rem; cursor: pointer; }
   .ghost:disabled { opacity: .5; cursor: default; }
   footer { font-size: .8rem; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   footer button { background: none; border: 0; color: var(--muted); text-decoration: underline; font: inherit; font-size: .8rem; cursor: pointer; padding: 0; }
@@ -73,7 +99,7 @@
   <header>
     <div class="eyebrow">Vriendendag</div>
     <h1>Simpelle Poll App voor Simpelle</h1>
-    <p class="lead">Per idee kies je nee, neutraal of ja. Je kunt je keuze altijd veranderen.</p>
+    <p class="lead">Per idee kies je nee, neutraal of ja. Je kunt je keuze altijd veranderen. Onder elk idee kun je een opmerking of verbetersuggestie kwijt.</p>
   </header>
 
   <div class="who">
@@ -98,7 +124,7 @@
       <input id="link" name="link" type="url" placeholder="https://">
     </label>
     <button class="add" id="addBtn" type="submit">Idee toevoegen</button>
-    <p class="tip">Vul eerst je naam in, dan kun je stemmen en toevoegen.</p>
+    <p class="tip">Vul eerst je naam in, dan kun je stemmen, toevoegen en reageren.</p>
   </form>
 
   <footer>
@@ -119,7 +145,9 @@
   var form = document.getElementById('form'), addBtn = document.getElementById('addBtn');
   var naamEl = document.getElementById('naam');
   var adminBtn = document.getElementById('adminBtn'), adminCode = document.getElementById('adminCode'), adminState = document.getElementById('adminState');
-  var ideas = [], votes = [], pendingDelete = null;
+  var ideas = [], votes = [], comments = [], pendingDelete = null, pendingCommentDelete = null;
+  // open: welke reactieblokken uitgeklapt staan; drafts: half getypte reacties, zodat een live update ze niet wist.
+  var open = {}, drafts = {};
 
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
@@ -127,6 +155,12 @@
   function me() { return naamEl.value.trim().replace(/[,:]/g, ' ').slice(0, 30); }
   function isAdmin() { return !!lsGet('simpelle-beheer'); }
   function setStatus(t) { statusEl.textContent = t; }
+  function when(iso) {
+    var d = new Date(iso);
+    try { return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { return ''; }
+  }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
   naamEl.value = lsGet('simpelle-naam') || '';
   naamEl.addEventListener('input', function () { lsSet('simpelle-naam', me()); render(); });
@@ -134,18 +168,46 @@
   function load() {
     return Promise.all([
       sb.from('ideas').select('*').order('created_at'),
-      sb.from('votes').select('*')
+      sb.from('votes').select('*'),
+      sb.from('comments').select('*').order('created_at')
     ]).then(function (r) {
-      if (r[0].error || r[1].error) { setStatus('Laden lukte niet. Vernieuw de pagina.'); return; }
-      ideas = r[0].data; votes = r[1].data; render();
+      if (r[0].error || r[1].error || r[2].error) { setStatus('Laden lukte niet. Vernieuw de pagina.'); return; }
+      ideas = r[0].data; votes = r[1].data; comments = r[2].data; render();
     });
+  }
+
+  function commentsHtml(idea, list, naam, admin) {
+    var id = idea.id, draft = drafts[id] || { kind: 'opmerking', body: '' };
+    var items = list.map(function (c) {
+      var own = naam && c.author === naam;
+      var sug = c.kind === 'suggestie';
+      return '<li class="c ' + (sug ? 'sug' : 'note') + '">' +
+        '<div class="cmeta"><span class="kind">' + (sug ? 'Suggestie' : 'Opmerking') + '</span><b>' + esc(c.author) + '</b><span>' + when(c.created_at) + '</span>' +
+          ((own || admin) ? '<button class="small' + (pendingCommentDelete === c.id ? ' confirm' : '') + '" data-cdel="' + c.id + '" type="button">' + (pendingCommentDelete === c.id ? 'Echt weg?' : 'Weg') + '</button>' : '') +
+        '</div>' +
+        '<p>' + esc(c.body) + '</p>' +
+      '</li>';
+    }).join('');
+    return '<div class="cbox">' +
+      (items ? '<ul class="clist">' + items + '</ul>' : '<div class="cempty">Nog geen reacties. Wat vind je van dit idee, of hoe kan het beter?</div>') +
+      '<form class="cform" data-cform="' + id + '">' +
+        '<div class="kinds">' +
+          '<label><input type="radio" name="kind-' + id + '" value="opmerking"' + (draft.kind !== 'suggestie' ? ' checked' : '') + '> Opmerking</label>' +
+          '<label><input type="radio" name="kind-' + id + '" value="suggestie"' + (draft.kind === 'suggestie' ? ' checked' : '') + '> Verbetersuggestie</label>' +
+        '</div>' +
+        '<textarea maxlength="500" placeholder="' + (draft.kind === 'suggestie' ? 'Bijv. liever op zaterdag, of een goedkopere variant' : 'Bijv. ben ik voor, maar wel met een regenplan') + '">' + esc(draft.body) + '</textarea>' +
+        '<div class="crow"><button class="ghost" type="submit"' + (naam ? '' : ' disabled') + '>Plaatsen</button>' +
+          (naam ? '' : '<p class="tip">Vul eerst je naam in om te reageren.</p>') + '</div>' +
+      '</form>' +
+    '</div>';
   }
 
   function render() {
     var naam = me(), admin = isAdmin();
     addBtn.disabled = !naam;
-    var byIdea = {};
+    var byIdea = {}, cByIdea = {};
     votes.forEach(function (v) { (byIdea[v.idea_id] = byIdea[v.idea_id] || []).push(v); });
+    comments.forEach(function (c) { (cByIdea[c.idea_id] = cByIdea[c.idea_id] || []).push(c); });
     var scored = ideas.map(function (i) {
       var vs = byIdea[i.id] || [];
       return { idea: i, votes: vs, score: vs.reduce(function (s, v) { return s + v.value; }, 0) };
@@ -163,6 +225,13 @@
       if (groups['1'].length) names += '<div><b>Ja:</b> ' + esc(groups['1'].join(', ')) + '</div>';
       if (groups['0'].length) names += '<div><b>Neutraal:</b> ' + esc(groups['0'].join(', ')) + '</div>';
       if (groups['-1'].length) names += '<div><b>Nee:</b> ' + esc(groups['-1'].join(', ')) + '</div>';
+      var cs = cByIdea[idea.id] || [];
+      var nNote = cs.filter(function (c) { return c.kind !== 'suggestie'; }).length, nSug = cs.length - nNote;
+      var parts = [];
+      if (nNote) parts.push(plural(nNote, 'opmerking', 'opmerkingen'));
+      if (nSug) parts.push(plural(nSug, 'suggestie', 'suggesties'));
+      var toggleText = parts.length ? parts.join(' en ') : 'Opmerking of suggestie plaatsen';
+      var isOpen = !!open[idea.id];
       var dis = naam ? '' : ' disabled';
       var li = document.createElement('li');
       li.className = 'idea' + (score > 0 && score === max ? ' top' : '');
@@ -176,12 +245,36 @@
           '<button class="v' + (mine === 1 ? ' on' : '') + '" data-id="' + idea.id + '" data-s="1" type="button"' + dis + '>Ja</button>' +
         '</div>' +
         (names ? '<div class="names">' + names + '</div>' : '') +
-        (admin ? '<button class="del' + (pendingDelete === idea.id ? ' confirm' : '') + '" data-del="' + idea.id + '" type="button">' + (pendingDelete === idea.id ? 'Echt schrappen?' : 'Schrappen') + '</button>' : '');
+        '<div class="tools">' +
+          '<button class="toggle" data-toggle="' + idea.id + '" type="button" aria-expanded="' + (isOpen ? 'true' : 'false') + '">' + toggleText + '</button>' +
+          (admin ? '<button class="small' + (pendingDelete === idea.id ? ' confirm' : '') + '" data-del="' + idea.id + '" type="button">' + (pendingDelete === idea.id ? 'Echt schrappen?' : 'Schrappen') + '</button>' : '') +
+        '</div>' +
+        (isOpen ? commentsHtml(idea, cs, naam, admin) : '');
       listEl.appendChild(li);
     });
   }
 
   listEl.addEventListener('click', function (e) {
+    var tog = e.target.closest('[data-toggle]');
+    if (tog) {
+      var tid = tog.getAttribute('data-toggle');
+      if (open[tid]) delete open[tid]; else open[tid] = true;
+      pendingCommentDelete = null; render();
+      if (open[tid]) { var ta = listEl.querySelector('[data-cform="' + tid + '"] textarea'); if (ta && me()) ta.focus(); }
+      return;
+    }
+    var cdel = e.target.closest('[data-cdel]');
+    if (cdel) {
+      var cid = cdel.getAttribute('data-cdel');
+      if (pendingCommentDelete !== cid) { pendingCommentDelete = cid; render(); return; }
+      pendingCommentDelete = null;
+      setStatus('Verwijderen…');
+      sb.from('comments').delete().eq('id', cid).then(function (r) {
+        if (r.error) { setStatus('Verwijderen lukte niet. Probeer het nog eens.'); return; }
+        setStatus('Reactie verwijderd.'); load();
+      });
+      return;
+    }
     var del = e.target.closest('[data-del]');
     if (del && isAdmin()) {
       var id = del.getAttribute('data-del');
@@ -209,6 +302,33 @@
     });
   });
 
+  // Klad bewaren terwijl je typt, zodat een live update van een ander je tekst niet wist.
+  listEl.addEventListener('input', function (e) {
+    var f = e.target.closest('[data-cform]'); if (!f) return;
+    var id = f.getAttribute('data-cform');
+    var kind = f.querySelector('input[type=radio]:checked');
+    drafts[id] = { kind: kind ? kind.value : 'opmerking', body: f.querySelector('textarea').value };
+    if (e.target.type === 'radio') {
+      f.querySelector('textarea').placeholder = drafts[id].kind === 'suggestie' ? 'Bijv. liever op zaterdag, of een goedkopere variant' : 'Bijv. ben ik voor, maar wel met een regenplan';
+    }
+  });
+
+  listEl.addEventListener('submit', function (e) {
+    var f = e.target.closest('[data-cform]'); if (!f) return;
+    e.preventDefault();
+    var naam = me(); if (!naam) { setStatus('Vul eerst je naam in.'); naamEl.focus(); return; }
+    var id = f.getAttribute('data-cform');
+    var body = f.querySelector('textarea').value.trim();
+    var kindEl = f.querySelector('input[type=radio]:checked'), kind = kindEl ? kindEl.value : 'opmerking';
+    if (!body) { f.querySelector('textarea').focus(); return; }
+    setStatus('Plaatsen…');
+    sb.from('comments').insert({ idea_id: id, author: naam, kind: kind, body: body }).then(function (r) {
+      if (r.error) { setStatus('Plaatsen lukte niet. Probeer het nog eens.'); return; }
+      delete drafts[id];
+      setStatus(kind === 'suggestie' ? 'Suggestie geplaatst.' : 'Opmerking geplaatst.'); load();
+    });
+  });
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     var title = document.getElementById('title').value.trim();
@@ -225,7 +345,7 @@
   });
 
   function paintAdmin() {
-    adminState.textContent = isAdmin() ? 'Je bent beheerder: je kunt ideeën schrappen.' : 'Iedereen met de link kan meedoen.';
+    adminState.textContent = isAdmin() ? 'Je bent beheerder: je kunt ideeën schrappen en reacties verwijderen.' : 'Iedereen met de link kan meedoen.';
     adminBtn.textContent = isAdmin() ? 'Beheer uit' : 'Beheer';
   }
   adminBtn.addEventListener('click', function () {
@@ -245,7 +365,8 @@
 
   load();
   sb.channel('poll').on('postgres_changes', { event: '*', schema: 'public', table: 'ideas' }, load)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, load).subscribe();
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, load)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, load).subscribe();
 })();
 </script>
 </body>
