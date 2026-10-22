@@ -1,15 +1,32 @@
 # Simpelle Poll App voor Simpelle
 
-Een poll op één pagina voor ideeën voor de vriendendag. Iedereen met de gedeelde link kan een idee toevoegen (titel, omschrijving, link) en per idee nee, neutraal of ja kiezen (telt als -1, 0 of +1). De naam van de stemmer komt er automatisch bij; alleen de eigenaar kan ideeën schrappen. Onderaan staat een knop Geef suggesties: de pagina vraagt Claude (via de `sample` capability) om drie nieuwe ideeën in de lijn van wat er al staat, elk met een knop om het meteen op de lijst te zetten.
+Een poll op één pagina voor ideeën voor de vriendendag. Iedereen met de link kan een idee toevoegen (titel, omschrijving, link) en per idee nee, neutraal of ja kiezen (telt als -1, 0 of +1). Je vult één keer je naam in; die staat bij je stem en wordt in je browser onthouden.
 
-## Hoe het werkt
+## Opslag
 
-- `index.html` is de hele app: opmaak, markup en script in één bestand.
-- De stand (ideeën en stemmen) staat als JSON in het bestand zelf, in `<script id="state" type="application/json">`.
-- De pagina draait als Claude artifact met de `artifact` capability: bij elke stem of toevoeging herschrijft de pagina zichzelf met de nieuwe stand en publiceert die, zodat iedereen dezelfde versie ziet.
-- Stemmen staan per persoon in de pagina, gekoppeld aan het claude.ai account (of aan een zelf ingevulde naam voor kijkers zonder account; die naam onthoudt de browser in `localStorage`). Per persoon telt per idee één stem, die je altijd kunt wijzigen of intrekken.
-- Stemmen twee mensen tegelijk, dan wint de eerste; de ander ziet een melding en kan opnieuw stemmen. Elke stem is een nieuwe versie, dus via de versiegeschiedenis kun je terug naar een eerdere stand.
+De ideeën en stemmen staan in een gratis Supabase project (Postgres, regio Frankfurt):
 
-## Buiten Claude gebruiken
+- `ideas`: id, title, description, link, created_at
+- `votes`: idea_id, voter, value (-1/0/1); één rij per persoon per idee
+- `settings`: alleen de beheercode, niet leesbaar vanuit de browser
 
-Zonder de artifact runtime werkt de pagina als alleen lezen. Wil je hem ergens anders hosten, vervang dan `artifact.publish(...)` door een eigen opslag (bijvoorbeeld een klein JSON endpoint).
+De pagina praat via de publishable key direct met Supabase. Row Level Security staat aan: anonieme bezoekers mogen lezen, ideeën toevoegen en stemmen toevoegen, wijzigen of intrekken. Niemand kan ideeën verwijderen, behalve via de functie `delete_idea(id, code)`, die de code tegen `settings` controleert.
+
+Wijzigingen komen bij alle open pagina's live binnen via Supabase Realtime.
+
+## Beheer
+
+Onderaan de pagina staat Beheer. Vul daar de beheercode in (eenmalig per browser), dan verschijnt bij elk idee een knop Schrappen met bevestiging. De code staat in de tabel `settings` in Supabase en is te wijzigen met:
+
+```sql
+update public.settings set value = 'nieuwe-code' where key = 'admin_code';
+```
+
+## Hosten
+
+`index.html` is de hele app. Zet de repo op GitHub Pages (Settings > Pages > Deploy from branch `main`, map `/`) en de poll staat online.
+
+## Bekende grenzen
+
+- De naam is vrije tekst, dus iemand kan onder een andere naam stemmen. Voor een vriendengroep is dat prima.
+- Tegelijk stemmen is geen probleem; elke stem is een eigen rij.

@@ -1,37 +1,29 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Simpelle Poll App voor Simpelle</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Nunito:wght@400;600;700&display=swap">
 <style>
   /* Layout: één smalle kolom, briefje op een prikbord. Ideeën als strookjes, stemmen als drie knoppen: nee, neutraal, ja. */
   :root {
-    --bg: #f6f1e7;
-    --paper: #fffdf8;
-    --fg: #2b2622;
-    --muted: #6f655c;
-    --line: #e2d8c8;
-    --accent: #1f7a5a;
-    --accent-ink: #ffffff;
-    --no: #b2453a;
-    --no-ink: #ffffff;
-    --neutral: #8b8378;
-    --display: "Fraunces", Georgia, serif;
-    --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+    --bg: #f6f1e7; --paper: #fffdf8; --fg: #2b2622; --muted: #6f655c; --line: #e2d8c8;
+    --accent: #1f7a5a; --accent-ink: #ffffff; --no: #b2453a; --no-ink: #ffffff; --neutral: #8b8378;
+    --display: "Fraunces", Georgia, serif; --body: "Nunito", "Segoe UI", system-ui, sans-serif;
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
+    :root {
       --bg: #1c1916; --paper: #262220; --fg: #f1ebe2; --muted: #a79d91; --line: #3b342e;
       --accent: #5fc39a; --accent-ink: #10231b; --no: #e07a6c; --no-ink: #2a120e; --neutral: #9a9185; color-scheme: dark;
     }
   }
-  :root[data-theme="dark"] {
-    --bg: #1c1916; --paper: #262220; --fg: #f1ebe2; --muted: #a79d91; --line: #3b342e;
-    --accent: #5fc39a; --accent-ink: #10231b; --no: #e07a6c; --no-ink: #2a120e; --neutral: #9a9185; color-scheme: dark;
-  }
+  * { box-sizing: border-box; }
   body {
-    background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    padding-block: 28px 48px;
+    margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: max(28px, env(safe-area-inset-top, 0px)) max(48px, env(safe-area-inset-bottom, 0px));
   }
   main { max-width: 560px; margin: 0 auto; display: grid; gap: 22px; }
   h1 { font-family: var(--display); font-weight: 800; font-size: clamp(1.9rem, 6vw, 2.6rem); line-height: 1.05; margin: 0; text-wrap: balance; }
@@ -40,7 +32,6 @@
   .status { font-size: .85rem; color: var(--muted); min-height: 1.3em; }
   .who { display: flex; gap: 8px; align-items: center; font-size: .9rem; color: var(--muted); flex-wrap: wrap; }
   .who input { max-width: 220px; }
-
   .list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
   .idea { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: grid; gap: 8px; }
   .idea.top { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
@@ -61,37 +52,37 @@
   .del { justify-self: end; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 4px 10px; font: inherit; font-size: .8rem; cursor: pointer; }
   .del.confirm { border-color: var(--no); color: var(--no); }
   .empty { color: var(--muted); font-style: italic; padding: 10px 0; }
-  .sugg { display: grid; gap: 10px; }
-  .ghost { justify-self: start; background: transparent; border: 2px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 9px 14px; font: inherit; font-weight: 700; cursor: pointer; }
-  .ghost:disabled { opacity: .5; cursor: default; }
-  .s { background: var(--paper); border: 1px dotted var(--line); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; }
-  .s h3 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
-  .s p { margin: 0; color: var(--muted); font-size: .92rem; }
-  .s button { justify-self: start; }
-
   form { background: var(--paper); border: 1px dashed var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 10px; }
   label { display: grid; gap: 4px; font-size: .85rem; font-weight: 700; color: var(--muted); }
-  input, textarea { font: inherit; font-size: 1rem; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; width: 100%; box-sizing: border-box; }
+  input, textarea { font: inherit; font-size: 1rem; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; width: 100%; }
   textarea { resize: vertical; min-height: 64px; }
   .add { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 12px; font: inherit; font-weight: 700; cursor: pointer; }
   .add:disabled { opacity: .5; cursor: default; }
   .tip { font-size: .8rem; color: var(--muted); margin: 0; }
+  .ghost { justify-self: start; background: transparent; border: 2px solid var(--accent); color: var(--accent); border-radius: 8px; padding: 9px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+  .ghost:disabled { opacity: .5; cursor: default; }
+  footer { font-size: .8rem; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  footer button { background: none; border: 0; color: var(--muted); text-decoration: underline; font: inherit; font-size: .8rem; cursor: pointer; padding: 0; }
+  [hidden] { display: none !important; }
   button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   @media (prefers-reduced-motion: no-preference) { .v { transition: transform .12s; } .v:active { transform: scale(.96); } }
 </style>
-
+</head>
+<body>
 <main>
   <header>
     <div class="eyebrow">Vriendendag</div>
     <h1>Simpelle Poll App voor Simpelle</h1>
-    <p class="lead">Per idee kies je nee, neutraal of ja. Je naam komt er automatisch bij. Je kunt je keuze altijd veranderen.</p>
+    <p class="lead">Per idee kies je nee, neutraal of ja. Je kunt je keuze altijd veranderen.</p>
   </header>
 
-  <div class="who" id="who"></div>
+  <div class="who">
+    <label style="display:contents">Je naam <input id="naam" maxlength="30" placeholder="Zodat we weten wie stemt"></label>
+  </div>
 
   <section>
     <div class="eyebrow">Ideeën</div>
-    <ul class="list" id="list"></ul>
+    <ul class="list" id="list"><li class="empty">Laden…</li></ul>
     <div class="status" id="status"></div>
   </section>
 
@@ -107,73 +98,77 @@
       <input id="link" name="link" type="url" placeholder="https://">
     </label>
     <button class="add" id="addBtn" type="submit">Idee toevoegen</button>
-    <p class="tip">Toevoegen en stemmen lukt zolang je via de gedeelde link met bewerkrechten binnenkomt. Alleen de eigenaar kan ideeën schrappen.</p>
+    <p class="tip">Vul eerst je naam in, dan kun je stemmen en toevoegen.</p>
   </form>
 
-  <section class="sugg" id="sugg" hidden>
-    <div class="eyebrow">Suggesties</div>
-    <p class="tip" id="suggTip">Op basis van wat er al staat bedenkt de pagina een paar ideeën in dezelfde richting.</p>
-    <button class="ghost" id="suggBtn" type="button">Geef suggesties</button>
-    <ul class="list" id="suggList"></ul>
-  </section>
+  <footer>
+    <span id="adminState">Iedereen met de link kan meedoen.</span>
+    <button type="button" id="adminBtn">Beheer</button>
+    <input id="adminCode" type="password" placeholder="Beheercode" hidden style="max-width:160px">
+  </footer>
 </main>
 
-<script id="state" type="application/json">
-{"ideas":[]}
-</script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 (function () {
-  var TEMPLATE = document.body.innerHTML; // statische pagina vóór render, met de JSON-state erin
-  var state = JSON.parse(document.getElementById('state').textContent);
-  var listEl = document.getElementById('list');
-  var statusEl = document.getElementById('status');
-  var whoEl = document.getElementById('who');
-  var form = document.getElementById('form');
-  var addBtn = document.getElementById('addBtn');
-  var artifact = null, user = null, sample = null;
-  var suggEl = document.getElementById('sugg'), suggBtn = document.getElementById('suggBtn'), suggList = document.getElementById('suggList'), suggTip = document.getElementById('suggTip');
-  var canWrite = false, isOwner = false;
-  var myKey = null;      // u_... (platform id) of "n:Naam" als er geen identiteit is
-  var pendingDelete = null;
+  var SUPABASE_URL = 'https://cazrloiigkxalwjmjgct.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_kok4LE-24iaogWJdhCa1jw_k1eIa0ua';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  var listEl = document.getElementById('list'), statusEl = document.getElementById('status');
+  var form = document.getElementById('form'), addBtn = document.getElementById('addBtn');
+  var naamEl = document.getElementById('naam');
+  var adminBtn = document.getElementById('adminBtn'), adminCode = document.getElementById('adminCode'), adminState = document.getElementById('adminState');
+  var ideas = [], votes = [], pendingDelete = null;
+
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function lsSet(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]; }); }
+  function me() { return naamEl.value.trim().replace(/[,:]/g, ' ').slice(0, 30); }
+  function isAdmin() { return !!lsGet('simpelle-beheer'); }
+  function setStatus(t) { statusEl.textContent = t; }
 
-  function scoreOf(idea) { var s = 0; Object.keys(idea.votes).forEach(function (k) { s += idea.votes[k]; }); return s; }
-  function keyName(key, profiles) {
-    if (key.indexOf('n:') === 0) return key.slice(2);
-    var p = profiles[key]; return (p && p.name) || 'Iemand';
+  naamEl.value = lsGet('simpelle-naam') || '';
+  naamEl.addEventListener('input', function () { lsSet('simpelle-naam', me()); render(); });
+
+  function load() {
+    return Promise.all([
+      sb.from('ideas').select('*').order('created_at'),
+      sb.from('votes').select('*')
+    ]).then(function (r) {
+      if (r[0].error || r[1].error) { setStatus('Laden lukte niet. Vernieuw de pagina.'); return; }
+      ideas = r[0].data; votes = r[1].data; render();
+    });
   }
 
   function render() {
-    var ids = [];
-    state.ideas.forEach(function (i) { Object.keys(i.votes).forEach(function (k) { if (k.indexOf('u_') === 0 && ids.indexOf(k) < 0) ids.push(k); }); });
-    var done = function (profiles) { paint(profiles || {}); };
-    if (user && ids.length) user.profiles(ids).then(done, function () { done({}); }); else done({});
-  }
-
-  function paint(profiles) {
-    var sorted = state.ideas.slice().sort(function (a, b) { return scoreOf(b) - scoreOf(a); });
-    var max = sorted.length ? scoreOf(sorted[0]) : 0;
+    var naam = me(), admin = isAdmin();
+    addBtn.disabled = !naam;
+    var byIdea = {};
+    votes.forEach(function (v) { (byIdea[v.idea_id] = byIdea[v.idea_id] || []).push(v); });
+    var scored = ideas.map(function (i) {
+      var vs = byIdea[i.id] || [];
+      return { idea: i, votes: vs, score: vs.reduce(function (s, v) { return s + v.value; }, 0) };
+    }).sort(function (a, b) { return b.score - a.score; });
+    var max = scored.length ? scored[0].score : 0;
     listEl.innerHTML = '';
-    if (!sorted.length) { listEl.innerHTML = '<li class="empty">Nog geen ideeën. Zet het eerste erbij.</li>'; return; }
-    sorted.forEach(function (idea) {
-      var score = scoreOf(idea);
-      var mine = myKey && Object.prototype.hasOwnProperty.call(idea.votes, myKey) ? idea.votes[myKey] : null;
-      var li = document.createElement('li');
-      li.className = 'idea' + (score > 0 && score === max ? ' top' : '');
+    if (!scored.length) { listEl.innerHTML = '<li class="empty">Nog geen ideeën. Zet het eerste erbij.</li>'; return; }
+    scored.forEach(function (row) {
+      var idea = row.idea, score = row.score;
+      var mineV = row.votes.find(function (v) { return v.voter === naam; });
+      var mine = mineV ? mineV.value : null;
       var groups = { '1': [], '0': [], '-1': [] };
-      Object.keys(idea.votes).forEach(function (k) { groups[String(idea.votes[k])].push(keyName(k, profiles)); });
+      row.votes.forEach(function (v) { groups[String(v.value)].push(v.voter); });
       var names = '';
       if (groups['1'].length) names += '<div><b>Ja:</b> ' + esc(groups['1'].join(', ')) + '</div>';
       if (groups['0'].length) names += '<div><b>Neutraal:</b> ' + esc(groups['0'].join(', ')) + '</div>';
       if (groups['-1'].length) names += '<div><b>Nee:</b> ' + esc(groups['-1'].join(', ')) + '</div>';
-      var dis = canWrite && myKey ? '' : ' disabled';
+      var dis = naam ? '' : ' disabled';
+      var li = document.createElement('li');
+      li.className = 'idea' + (score > 0 && score === max ? ' top' : '');
       li.innerHTML =
         '<div class="head"><h2>' + esc(idea.title) + '</h2><span class="score' + (score > 0 ? ' pos' : score < 0 ? ' neg' : '') + '">' + (score > 0 ? '+' : '') + score + '</span></div>' +
-        (idea.desc ? '<p>' + esc(idea.desc) + '</p>' : '') +
+        (idea.description ? '<p>' + esc(idea.description) + '</p>' : '') +
         (idea.link ? '<a href="' + esc(idea.link) + '" target="_blank" rel="noopener">' + esc(idea.link.replace(/^https?:\/\//, '')) + '</a>' : '') +
         '<div class="buttons">' +
           '<button class="v' + (mine === -1 ? ' on' : '') + '" data-id="' + idea.id + '" data-s="-1" type="button"' + dis + '>Nee</button>' +
@@ -181,126 +176,77 @@
           '<button class="v' + (mine === 1 ? ' on' : '') + '" data-id="' + idea.id + '" data-s="1" type="button"' + dis + '>Ja</button>' +
         '</div>' +
         (names ? '<div class="names">' + names + '</div>' : '') +
-        (isOwner ? '<button class="del' + (pendingDelete === idea.id ? ' confirm' : '') + '" data-del="' + idea.id + '" type="button">' + (pendingDelete === idea.id ? 'Echt schrappen?' : 'Schrappen') + '</button>' : '');
+        (admin ? '<button class="del' + (pendingDelete === idea.id ? ' confirm' : '') + '" data-del="' + idea.id + '" type="button">' + (pendingDelete === idea.id ? 'Echt schrappen?' : 'Schrappen') + '</button>' : '');
       listEl.appendChild(li);
     });
   }
 
-  function buildDocument() {
-    var body = TEMPLATE.replace(/<script id="state" type="application\/json">[\s\S]*?<\/script>/,
-      '<script id="state" type="application/json">\n' + JSON.stringify(state).replace(/<\//g, '<\\/') + '\n</' + 'script>');
-    return '<!doctype html><html><head>' + document.head.innerHTML + '</head><body>' + body + '</body></html>';
-  }
-
-  var busy = false;
-  function publish(msg) {
-    if (!artifact || busy) return;
-    busy = true; statusEl.textContent = 'Opslaan…';
-    artifact.publish(buildDocument()).then(function () {
-      statusEl.textContent = msg || 'Opgeslagen.';
-    }).catch(function (err) {
-      var code = err && err.code;
-      if (code === 'conflict') statusEl.textContent = 'Iemand anders was net eerder; de pagina ververst.';
-      else if (code === 'not_granted' || code === 'not_writer') statusEl.textContent = 'Je kunt alleen meekijken op deze link.';
-      else statusEl.textContent = 'Opslaan lukte niet. Probeer het nog eens.';
-    }).finally(function () { busy = false; });
-  }
-
   listEl.addEventListener('click', function (e) {
     var del = e.target.closest('[data-del]');
-    if (del && isOwner) {
+    if (del && isAdmin()) {
       var id = del.getAttribute('data-del');
       if (pendingDelete !== id) { pendingDelete = id; render(); return; }
       pendingDelete = null;
-      state.ideas = state.ideas.filter(function (i) { return i.id !== id; });
-      render(); publish('Idee geschrapt.'); return;
+      setStatus('Schrappen…');
+      sb.rpc('delete_idea', { p_id: id, p_code: lsGet('simpelle-beheer') }).then(function (r) {
+        if (r.error || r.data !== true) { setStatus('Schrappen lukte niet. Klopt de beheercode nog?'); return; }
+        setStatus('Idee geschrapt.'); load();
+      });
+      return;
     }
-    var btn = e.target.closest('.v'); if (!btn || !canWrite || !myKey) return;
-    var idea = state.ideas.find(function (i) { return i.id === btn.getAttribute('data-id'); }); if (!idea) return;
-    var s = parseInt(btn.getAttribute('data-s'), 10);
-    if (idea.votes[myKey] === s) delete idea.votes[myKey]; else idea.votes[myKey] = s;
+    var btn = e.target.closest('.v'); if (!btn) return;
+    var naam = me(); if (!naam) { setStatus('Vul eerst je naam in.'); naamEl.focus(); return; }
+    var ideaId = btn.getAttribute('data-id'), s = parseInt(btn.getAttribute('data-s'), 10);
+    var existing = votes.find(function (v) { return v.idea_id === ideaId && v.voter === naam; });
     pendingDelete = null;
-    render();
-    publish(idea.votes[myKey] === undefined ? 'Stem ingetrokken.' : 'Stem genoteerd.');
+    setStatus('Opslaan…');
+    var q = (existing && existing.value === s)
+      ? sb.from('votes').delete().match({ idea_id: ideaId, voter: naam })
+      : sb.from('votes').upsert({ idea_id: ideaId, voter: naam, value: s, updated_at: new Date().toISOString() });
+    q.then(function (r) {
+      if (r.error) { setStatus('Opslaan lukte niet. Probeer het nog eens.'); return; }
+      setStatus(existing && existing.value === s ? 'Stem ingetrokken.' : 'Stem genoteerd.'); load();
+    });
   });
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    if (!canWrite) return;
     var title = document.getElementById('title').value.trim();
-    if (!title) return;
-    state.ideas.push({ id: 'i' + Date.now().toString(36), title: title,
-      desc: document.getElementById('desc').value.trim(), link: document.getElementById('link').value.trim(), votes: {} });
-    form.reset();
-    render();
-    publish('Idee toegevoegd.');
+    if (!title || !me()) return;
+    setStatus('Opslaan…');
+    sb.from('ideas').insert({
+      title: title,
+      description: document.getElementById('desc').value.trim(),
+      link: document.getElementById('link').value.trim()
+    }).then(function (r) {
+      if (r.error) { setStatus('Toevoegen lukte niet. Probeer het nog eens.'); return; }
+      form.reset(); setStatus('Idee toegevoegd.'); load();
+    });
   });
 
-  function suggest() {
-    if (!sample || !state.ideas.length) return;
-    suggBtn.disabled = true; suggTip.textContent = 'Even denken…';
-    var lijst = state.ideas.map(function (i) { return '- ' + i.title + (i.desc ? ' (' + i.desc + ')' : ''); }).join('\n');
-    var prompt = 'Een vriendengroep uit de omgeving van Arnhem kiest een activiteit voor een vriendendag. Dit staat er al op de lijst:\n' + lijst +
-      '\n\nBedenk 3 nieuwe ideeën in dezelfde sfeer als wat er al staat, maar geen dubbelingen. Kort en concreet, in het Nederlands. ' +
-      'Antwoord alleen met JSON: een array van objecten met velden "title" (max 60 tekens) en "desc" (één zin).';
-    sample.json(prompt, { modelTier: 'quick', cache: false }).then(function (arr) {
-      suggList.innerHTML = '';
-      if (!Array.isArray(arr) || !arr.length) throw new Error('leeg');
-      arr.slice(0, 3).forEach(function (it) {
-        var li = document.createElement('li'); li.className = 's';
-        li.innerHTML = '<h3>' + esc(it.title || '') + '</h3><p>' + esc(it.desc || '') + '</p>' +
-          (canWrite ? '<button class="ghost" type="button">Zet erbij</button>' : '');
-        var b = li.querySelector('button');
-        if (b) b.addEventListener('click', function () {
-          state.ideas.push({ id: 'i' + Date.now().toString(36), title: String(it.title || '').slice(0, 80), desc: String(it.desc || '').slice(0, 300), link: '', votes: {} });
-          li.remove(); render(); publish('Idee toegevoegd.');
-        });
-        suggList.appendChild(li);
-      });
-      suggTip.textContent = 'Zet erbij wat je leuk vindt, de rest verdwijnt vanzelf.';
-    }).catch(function (err) {
-      var code = err && err.code;
-      if (code === 'not_granted') { suggEl.hidden = true; return; }
-      suggTip.textContent = code === 'rate_limited' ? 'Even te veel gevraagd, probeer het zo nog eens.' : 'Suggesties ophalen lukte niet. Probeer het nog eens.';
-    }).finally(function () { suggBtn.disabled = false; });
+  function paintAdmin() {
+    adminState.textContent = isAdmin() ? 'Je bent beheerder: je kunt ideeën schrappen.' : 'Iedereen met de link kan meedoen.';
+    adminBtn.textContent = isAdmin() ? 'Beheer uit' : 'Beheer';
   }
-  suggBtn.addEventListener('click', suggest);
-
-  function showNameField() {
-    var saved = lsGet('simpelle-naam') || '';
-    whoEl.innerHTML = '<label style="display:contents">Je naam <input id="naam" maxlength="30" placeholder="Zodat we weten wie stemt"></label>';
-    var inp = document.getElementById('naam');
-    inp.value = saved;
-    myKey = saved ? 'n:' + saved : null;
-    inp.addEventListener('change', function () {
-      var n = inp.value.trim().replace(/[,:]/g, ' ');
-      lsSet('simpelle-naam', n);
-      myKey = n ? 'n:' + n : null;
-      render();
+  adminBtn.addEventListener('click', function () {
+    if (isAdmin()) { lsSet('simpelle-beheer', null); paintAdmin(); render(); return; }
+    adminCode.hidden = !adminCode.hidden; if (!adminCode.hidden) adminCode.focus();
+  });
+  adminCode.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    var code = adminCode.value.trim(); if (!code) return;
+    // Controle: probeer te schrappen met een niet-bestaand id; true betekent dat de code klopt.
+    sb.rpc('delete_idea', { p_id: '00000000-0000-0000-0000-000000000000', p_code: code }).then(function (r) {
+      if (r.data === true) { lsSet('simpelle-beheer', code); adminCode.value = ''; adminCode.hidden = true; paintAdmin(); render(); }
+      else setStatus('Beheercode klopt niet.');
     });
-  }
+  });
+  paintAdmin();
 
-  function setWrite(on) { canWrite = on; addBtn.disabled = !on; render(); }
-  var _render = render;
-  render = function () { _render(); suggBtn.disabled = !state.ideas.length; };
-
-  setWrite(false);
-  statusEl.textContent = 'Verbinden…';
-  if (window.claude && typeof window.claude.use === 'function') {
-    Promise.all([window.claude.use('artifact'), window.claude.use('user'), window.claude.use('sample')]).then(function (r) {
-      artifact = r[0]; user = r[1]; sample = r[2];
-      if (sample) suggEl.hidden = false;
-      var me = user ? user.me() : Promise.resolve({ id: null, name: '', isOwner: false });
-      me.then(function (m) {
-        isOwner = !!m.isOwner;
-        if (m.id) { myKey = m.id; whoEl.textContent = 'Je stemt als ' + (m.name || 'jezelf') + '.'; }
-        else showNameField();
-        if (artifact) { setWrite(true); statusEl.textContent = ''; }
-        else { statusEl.textContent = 'Je kunt meekijken; toevoegen en stemmen kan niet vanaf deze link.'; render(); }
-      });
-    });
-  } else {
-    statusEl.textContent = 'Je kunt meekijken; toevoegen en stemmen kan niet vanaf deze link.';
-  }
+  load();
+  sb.channel('poll').on('postgres_changes', { event: '*', schema: 'public', table: 'ideas' }, load)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, load).subscribe();
 })();
 </script>
+</body>
+</html>
