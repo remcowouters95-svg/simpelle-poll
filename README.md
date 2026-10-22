@@ -7,7 +7,8 @@ Een poll op één pagina voor ideeën voor de vriendendag. Iedereen met de gedee
 - `index.html` is de hele app: opmaak, markup en script in één bestand.
 - De stand (ideeën en stemmen) staat als JSON in het bestand zelf, in `<script id="state" type="application/json">`.
 - De pagina draait als Claude artifact met de `artifact` capability: bij elke stem of toevoeging herschrijft de pagina zichzelf met de nieuwe stand en publiceert die, zodat iedereen dezelfde versie ziet.
-- Welke ideeën jij al hebt gestemd staat in `localStorage` van je eigen browser, zodat je per idee maar één keer kunt stemmen.
+- Stemmen staan per persoon in de pagina, gekoppeld aan het claude.ai account (of aan een zelf ingevulde naam voor kijkers zonder account; die naam onthoudt de browser in `localStorage`). Per persoon telt per idee één stem, die je altijd kunt wijzigen of intrekken.
+- Stemmen twee mensen tegelijk, dan wint de eerste; de ander ziet een melding en kan opnieuw stemmen. Elke stem is een nieuwe versie, dus via de versiegeschiedenis kun je terug naar een eerdere stand.
 
 ## Buiten Claude gebruiken
 
