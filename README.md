@@ -10,7 +10,7 @@ De ideeën en stemmen staan in een gratis Supabase project (Postgres, regio Fran
 - `votes`: idea_id, voter, value (-1/0/1); één rij per persoon per idee
 - `comments`: id, idea_id, author, kind (`opmerking` of `suggestie`), body, created_at
 - `settings`: alleen de beheercode, niet leesbaar vanuit de browser
-- `change_requests`: verzoeken van de beheerder om de app aan te passen (author, body, status, answer, pr_url); alleen bereikbaar via de functies `request_change(code, author, body)` en `list_change_requests(code)`, die de beheercode controleren
+- `change_requests`: verzoeken van de beheerder om de app aan te passen (author, body, status, answer, pr_url); alleen bereikbaar via de functies `request_change(code, author, body)`, `list_change_requests(code)` en `withdraw_change_request(code, id)`, die de beheercode controleren
 
 De pagina praat via de publishable key direct met Supabase. Row Level Security staat aan: anonieme bezoekers mogen lezen, ideeën toevoegen, stemmen toevoegen, wijzigen of intrekken, en reacties plaatsen of verwijderen. Niemand kan ideeën verwijderen, behalve via de functie `delete_idea(id, code)`, die de code tegen `settings` controleert. Schrap je een idee, dan gaan de stemmen en reacties erbij mee weg.
 
@@ -22,7 +22,7 @@ Onderaan de pagina staat Beheer. Vul daar de beheercode in (eenmalig per browser
 
 ### Aanpassing aanvragen
 
-De beheerder beschrijft in dat blok wat er anders moet aan de app. Het verzoek komt in `change_requests` met status `nieuw`. Een scheduled task in Claude Code kijkt een paar keer per dag of er nieuwe verzoeken zijn, bouwt de aanpassing op een eigen branch, opent een draft pull request en zet de status op `klaar` met een korte uitleg en de link naar de pull request. De eigenaar van de repo keurt de pull request goed, daarna staat de aanpassing op GitHub Pages. Een verzoek dat onduidelijk, onveilig of niet haalbaar is krijgt status `afgewezen` met uitleg. De beheerder ziet status en antwoord in hetzelfde blok. De code staat in de tabel `settings` in Supabase en is te wijzigen met:
+De beheerder beschrijft in dat blok wat er anders moet aan de app. Het verzoek komt in `change_requests` met status `nieuw`. Een scheduled task in Claude Code kijkt een paar keer per dag of er nieuwe verzoeken zijn, bouwt de aanpassing op een eigen branch, opent een draft pull request en zet de status op `klaar` met een korte uitleg en de link naar de pull request. De eigenaar van de repo keurt de pull request goed, daarna staat de aanpassing op GitHub Pages. Een verzoek dat onduidelijk, onveilig of niet haalbaar is krijgt status `afgewezen` met uitleg. De beheerder ziet status en antwoord in hetzelfde blok en kan een verzoek intrekken zolang de status nog `nieuw` is (het verzoek blijft bewaard met `withdrawn = true`, maar wordt niet meer getoond of opgepakt). De code staat in de tabel `settings` in Supabase en is te wijzigen met:
 
 ```sql
 update public.settings set value = 'nieuwe-code' where key = 'admin_code';

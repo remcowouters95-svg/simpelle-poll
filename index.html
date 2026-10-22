@@ -365,6 +365,7 @@
 
   var adminPanel = document.getElementById('adminPanel'), reqForm = document.getElementById('reqForm');
   var reqBody = document.getElementById('reqBody'), reqBtn = document.getElementById('reqBtn'), reqList = document.getElementById('reqList');
+  var pendingWithdraw = null;
   var STATUS_TEXT = { nieuw: 'Nieuw, wacht op Claude', bezig: 'Claude is ermee bezig', klaar: 'Klaar, wacht op goedkeuring', afgewezen: 'Niet gedaan' };
 
   function loadRequests() {
@@ -378,10 +379,22 @@
           '<div class="cmeta"><span class="badge ' + esc(q.status) + '">' + esc(STATUS_TEXT[q.status] || q.status) + '</span><b>' + esc(q.author) + '</b><span>' + when(q.created_at) + '</span></div>' +
           '<p>' + esc(q.body) + '</p>' +
           (q.answer ? '<div class="answer">' + esc(q.answer) + (q.pr_url ? ' <a href="' + esc(q.pr_url) + '" target="_blank" rel="noopener">Bekijk de pull request</a>' : '') + '</div>' : '') +
+          (q.status === 'nieuw' ? '<button class="small' + (pendingWithdraw === q.id ? ' confirm' : '') + '" data-withdraw="' + q.id + '" type="button" style="justify-self:end">' + (pendingWithdraw === q.id ? 'Echt intrekken?' : 'Intrekken') + '</button>' : '') +
         '</li>';
       }).join('');
     });
   }
+
+  reqList.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-withdraw]'); if (!b || !isAdmin()) return;
+    var id = b.getAttribute('data-withdraw');
+    if (pendingWithdraw !== id) { pendingWithdraw = id; loadRequests(); return; }
+    pendingWithdraw = null; setStatus('Intrekken…');
+    sb.rpc('withdraw_change_request', { p_code: lsGet('simpelle-beheer'), p_id: id }).then(function (r) {
+      if (r.error || r.data !== true) { setStatus('Intrekken lukte niet. Misschien is Claude er al mee bezig.'); loadRequests(); return; }
+      setStatus('Verzoek ingetrokken.'); loadRequests();
+    });
+  });
 
   reqForm.addEventListener('submit', function (e) {
     e.preventDefault();
