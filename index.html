@@ -89,6 +89,13 @@
   .ghost:disabled { opacity: .5; cursor: default; }
   footer { font-size: .8rem; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   footer button { background: none; border: 0; color: var(--muted); text-decoration: underline; font: inherit; font-size: .8rem; cursor: pointer; padding: 0; }
+  .req { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: grid; gap: 4px; font-size: .9rem; }
+  .req p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .req .answer { color: var(--muted); font-size: .85rem; border-top: 1px dashed var(--line); padding-top: 4px; }
+  .badge { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; border-radius: 999px; padding: 1px 8px; background: var(--note-bg); color: var(--muted); }
+  .badge.bezig { background: var(--sug-bg); color: var(--sug); }
+  .badge.klaar { background: var(--accent); color: var(--accent-ink); }
+  .badge.afgewezen { background: var(--no); color: var(--no-ink); }
   [hidden] { display: none !important; }
   button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   @media (prefers-reduced-motion: no-preference) { .v { transition: transform .12s; } .v:active { transform: scale(.96); } }
@@ -126,6 +133,18 @@
     <button class="add" id="addBtn" type="submit">Idee toevoegen</button>
     <p class="tip">Vul eerst je naam in, dan kun je stemmen, toevoegen en reageren.</p>
   </form>
+
+  <section id="adminPanel" hidden>
+    <form id="reqForm">
+      <div class="eyebrow">Beheer: aanpassing aanvragen</div>
+      <p class="tip">Wil je iets anders aan deze app? Beschrijf het hier. Je verzoek wordt automatisch opgepakt door Claude. De aanpassing komt als pull request op GitHub en gaat live zodra de eigenaar van de app hem goedkeurt. Hieronder zie je de status en het antwoord.</p>
+      <label>Wat moet er anders?
+        <textarea id="reqBody" maxlength="1000" required placeholder="Bijv. laat per idee zien hoeveel mensen nog niet gestemd hebben"></textarea>
+      </label>
+      <button class="add" id="reqBtn" type="submit">Verzoek versturen</button>
+    </form>
+    <ul class="list" id="reqList" style="margin-top:12px"></ul>
+  </section>
 
   <footer>
     <span id="adminState">Iedereen met de link kan meedoen.</span>
@@ -344,9 +363,42 @@
     });
   });
 
+  var adminPanel = document.getElementById('adminPanel'), reqForm = document.getElementById('reqForm');
+  var reqBody = document.getElementById('reqBody'), reqBtn = document.getElementById('reqBtn'), reqList = document.getElementById('reqList');
+  var STATUS_TEXT = { nieuw: 'Nieuw, wacht op Claude', bezig: 'Claude is ermee bezig', klaar: 'Klaar, wacht op goedkeuring', afgewezen: 'Niet gedaan' };
+
+  function loadRequests() {
+    if (!isAdmin()) return;
+    sb.rpc('list_change_requests', { p_code: lsGet('simpelle-beheer') }).then(function (r) {
+      if (r.error) { reqList.innerHTML = '<li class="cempty">Verzoeken laden lukte niet.</li>'; return; }
+      var rows = r.data || [];
+      if (!rows.length) { reqList.innerHTML = '<li class="cempty">Nog geen verzoeken gestuurd.</li>'; return; }
+      reqList.innerHTML = rows.map(function (q) {
+        return '<li class="req">' +
+          '<div class="cmeta"><span class="badge ' + esc(q.status) + '">' + esc(STATUS_TEXT[q.status] || q.status) + '</span><b>' + esc(q.author) + '</b><span>' + when(q.created_at) + '</span></div>' +
+          '<p>' + esc(q.body) + '</p>' +
+          (q.answer ? '<div class="answer">' + esc(q.answer) + (q.pr_url ? ' <a href="' + esc(q.pr_url) + '" target="_blank" rel="noopener">Bekijk de pull request</a>' : '') + '</div>' : '') +
+        '</li>';
+      }).join('');
+    });
+  }
+
+  reqForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var body = reqBody.value.trim(); if (!body || !isAdmin()) return;
+    reqBtn.disabled = true; setStatus('Verzoek versturen…');
+    sb.rpc('request_change', { p_code: lsGet('simpelle-beheer'), p_author: me() || 'Beheerder', p_body: body }).then(function (r) {
+      reqBtn.disabled = false;
+      if (r.error || !r.data) { setStatus('Versturen lukte niet. Klopt de beheercode nog?'); return; }
+      reqBody.value = ''; setStatus('Verzoek verstuurd. Claude kijkt er binnen een paar uur naar.'); loadRequests();
+    });
+  });
+
   function paintAdmin() {
-    adminState.textContent = isAdmin() ? 'Je bent beheerder: je kunt ideeën schrappen en reacties verwijderen.' : 'Iedereen met de link kan meedoen.';
+    adminState.textContent = isAdmin() ? 'Je bent beheerder: je kunt ideeën schrappen, reacties verwijderen en aanpassingen aanvragen.' : 'Iedereen met de link kan meedoen.';
     adminBtn.textContent = isAdmin() ? 'Beheer uit' : 'Beheer';
+    adminPanel.hidden = !isAdmin();
+    if (isAdmin()) loadRequests();
   }
   adminBtn.addEventListener('click', function () {
     if (isAdmin()) { lsSet('simpelle-beheer', null); paintAdmin(); render(); return; }
